@@ -1,7 +1,7 @@
 require('dotenv').config();
 // Require the necessary discord.js classes
 const { Client, Intents } = require('discord.js');
-const { token } = require('./config.json');
+//const { token } = require('./config.json');
 const fetch = require('node-fetch')
 const { MessageAttachment, MessageEmbed } = require('discord.js');
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
@@ -16,6 +16,7 @@ const { title } = require('process');
 
 weatherapi = (process.env.WEATHER)
 stockapi = (process.env.STOCKAPI)
+discordtoken = (process.env.TOKEN)
 
 // Create a new client instance
 const client = new Client({ intents: [
@@ -199,10 +200,14 @@ client.on('messageCreate', (message) => {
     if (message.content.includes('!stock')) {
         const stockcheck = fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${ticker}&interval=5min&outputsize=full&adjusted=true&apikey=${stockapi}`)
         .then((response) => {
+          if (response.status >= 200 && response.status <= 299) {
             return response.json();
+          } else {
+            return response.status;
+          }
         })
         .then((data) => {
-            //console.log(data)
+            console.log(data)
             return data
             
         })
@@ -211,9 +216,10 @@ client.on('messageCreate', (message) => {
 
         const stockprint = async () => {
             const a = await stockcheck;
+            console.log(a)
             const b = a['Time Series (5min)']
-            //console.log(b)
-            const c = Object.entries(b)
+            
+            
             
             for (const [key, value] of Object.entries(b)) {
                 //console.log(`${key}: ` + value['4. close']);
@@ -246,8 +252,21 @@ client.on('messageCreate', (message) => {
             const configuration = {
             type: 'line',
             scaleGridLineColor : "rgba(0,0,0,0)",
-            options: {
-                elements: ''
+            options: {                
+                elements: '',
+                scales: {
+                  x: {
+                    grid: {
+                      color: 'white',
+                      borderColor: 'white',
+                      tickColor: 'white'
+                    },
+                    ticks: {
+                      maxTicksLimit: 5
+                    }
+                  }
+                }
+                
             },
             plugins: [plugin],
             data: {
@@ -276,28 +295,24 @@ client.on('messageCreate', (message) => {
             const imageBuffer = await canvasRenderService.renderToBuffer(configuration);
     
             // Write image to file
-            fs.writeFileSync('mychart.png', imageBuffer);
-            })();
-            const file = new MessageAttachment('mychart.png');
+            fs.writeFile('mychart.png', imageBuffer, () => {
+              const file = new MessageAttachment('mychart.png');
+              const stockEmbed = new MessageEmbed()
+	              .setImage('attachment://mychart.png')
+                //.setTitle('')
+              message.reply({ embeds: [stockEmbed], files: [file] });
 
-            const stockEmbed = new MessageEmbed()
-	// .setColor('#0099ff')
-	// .setTitle('Some title')
-	// // .setURL('https://discord.js.org/')
-	// .setAuthor({ name: 'Some name', iconURL: 'https://i.imgur.com/AfFp7pu.png', url: 'https://discord.js.org' })
-	// .setDescription('Some description here')
-	// .setThumbnail('https://i.imgur.com/AfFp7pu.png')
-	// .addFields(
-	// 	{ name: 'Regular field title', value: 'Some value here' },
-	// 	{ name: '\u200B', value: '\u200B' },
-	// 	{ name: 'Inline field title', value: 'Some value here', inline: true },
-	// 	{ name: 'Inline field title', value: 'Some value here', inline: true },
-	// )
-	// .addField('Inline field title', 'Some value here', true)
-	.setImage('attachment://mychart.png')
-	// .setTimestamp()
-	// .setFooter({ text: 'Some footer text here', iconURL: 'https://i.imgur.com/AfFp7pu.png' });
-    message.reply({ embeds: [stockEmbed], files: [file] });
+              });
+            })
+            ();
+            // const file = new MessageAttachment('mychart.png');
+            // const stockEmbed = new MessageEmbed()
+	          // .setImage('attachment://mychart.png')
+            // message.reply({ embeds: [stockEmbed], files: [file] });
+            // unlink('mychart.png', (err) => {
+            // if (err) throw err;
+            // console.log('mychart.png was deleted');
+            // });
 
 
             
@@ -313,4 +328,4 @@ client.on('messageCreate', (message) => {
     }
 }) 
 // Login to Discord with your client's token
-client.login(token)
+client.login(discordtoken)
