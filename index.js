@@ -13,7 +13,7 @@ const { title } = require('process');
 
 //Chart.register(ChartDataLabels);
 
-
+openweather = (process.env.WEATHER2)
 weatherapi = (process.env.WEATHER)
 stockapi = (process.env.STOCKAPI)
 discordtoken = (process.env.TOKEN)
@@ -97,6 +97,7 @@ client.on('messageCreate', message => {
         }
       }
     
+    
 
 
     const weather = fetch(`http://api.weatherapi.com/v1/current.json?key=${weatherapi}&q=${city}`,
@@ -124,22 +125,6 @@ client.on('messageCreate', message => {
         // Handle the error
         console.log(error);
       });
-    
-    
-    // .then((response) => {
-    //     return response.json
-    // })
-    // .then((response) => {
-    //     console.log(response)
-    //})
-    console
-
-    // const pwet = async () => {
-    //     var a = await weather;
-    //     console.log(a)
-    // }
-    
-    // pwet()
     
 
     const printWeather = async () => {
@@ -184,21 +169,85 @@ client.on('messageCreate', message => {
         
     }
 
-        
-    
-
-
     if (message.content.includes('!weather')) {
         printWeather();
     }
-})
+
+    if (message.content.includes('!forecast')) {
+      cityname = message.content.split(" ")[1]
+      countrycode = message.content.split(" ")[2]
+      // const geolocate = fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${cityname},${countrycode}&limit=1&appid=${openweather}`)
+      // .then((response) => {
+      //   if (response.status >= 200 && response.status <= 299) {
+      //     return response.json();
+      //   } else {
+      //     console.log(response.status);
+      //     return response.status; }
+      //   })
+      // .then((data1) => {
+      //   //console.log(data);
+      //   return data1;
+      //   })
+      // const geolocatesync = async () => {
+      //   const b = await geolocate;
+      //     if (b > 300) {
+      //     message.reply('Error')
+      //     } else {
+
+      //     }
+      // }
+      const forecast = fetch(`https://api.weatherapi.com/v1/forecast.json?key=${weatherapi}&q=${cityname},${countrycode}&days=3&aqi=no&alerts=no`,
+        {method: "GET", headers: {'Accept': 'application/json','Content-Type': 'application/json'}}
+        )
+      .then((response) => {
+        if (response.status >= 200 && response.status <= 299) {
+          return response.json();
+        } else {
+          console.log(response.status);
+          return response.status; }
+        })
+      .then((data) => {
+        //console.log(data);
+        return data;
+        })
+        const printForcast = async () => {
+          const b = await forecast;
+          if (b > 300) {
+              message.reply('Error')
+          } else {
+            //console.log(b.daily)
+            for (const [key, value] of Object.keys(b)) {
+              //console.log(value);
+              const f = key
+              const d = value['4. close']
+            }
+            console.log((b.forecast.forecastday[0]['day']['condition']['text']))
+            const forecastEmbed = new MessageEmbed()
+              .setColor('#0099ff')
+              .setTitle('3 Day Forecast for ' + cityname)
+            
+            
+              message.reply({ embeds: [forecastEmbed] });
+
+
+
+          }
+        }
+        printForcast()
+      }
+      
+
+
+       
+    }
+)
 
 client.on('messageCreate', (message) => {
     ticker = message.content.split(' ')[1]
 
 
     if (message.content.includes('!stock')) {
-        const stockcheck = fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${ticker}&interval=5min&outputsize=full&adjusted=true&apikey=${stockapi}`)
+        const stockcheck = fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${ticker}&interval=5min&outputsize=compact&adjusted=true&apikey=${stockapi}`)
         .then((response) => {
           if (response.status >= 200 && response.status <= 299) {
             return response.json();
@@ -207,7 +256,7 @@ client.on('messageCreate', (message) => {
           }
         })
         .then((data) => {
-            console.log(data)
+            //console.log(data)
             return data
             
         })
@@ -216,7 +265,7 @@ client.on('messageCreate', (message) => {
 
         const stockprint = async () => {
             const a = await stockcheck;
-            console.log(a)
+            //console.log(a)
             const b = a['Time Series (5min)']
             
             
@@ -304,19 +353,7 @@ client.on('messageCreate', (message) => {
 
               });
             })
-            ();
-            // const file = new MessageAttachment('mychart.png');
-            // const stockEmbed = new MessageEmbed()
-	          // .setImage('attachment://mychart.png')
-            // message.reply({ embeds: [stockEmbed], files: [file] });
-            // unlink('mychart.png', (err) => {
-            // if (err) throw err;
-            // console.log('mychart.png was deleted');
-            // });
-
-
-            
-              
+            ();            
             
         }
 
